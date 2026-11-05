@@ -1,7 +1,8 @@
 const { calculateBmi } = require('../utils/bmi');
 
-const API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = () => process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
+// Google Gemini API Config
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const LANGUAGES = { en: 'English', si: 'Sinhala', ta: 'Tamil' };
 
@@ -50,7 +51,7 @@ const buildSystemPrompt = (profile, language) => {
 // body: { messages: [{ role: 'user' | 'assistant', content: string }], profile?: { age, heightCm, weightKg }, language?: 'en' | 'si' | 'ta' }
 const chat = async (req, res, next) => {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return res.status(503).json({ code: 'AI_NOT_CONFIGURED', message: 'AI assistant is not configured on the server' });
     }
     if (rateLimited(String(req.user._id))) {
@@ -69,14 +70,13 @@ const chat = async (req, res, next) => {
       .map((m) => ({ role: m.role, content: m.content.trim().slice(0, 2000) }));
     while (clean.length && clean[0].role !== 'user') clean.shift();
 
-    // The API needs alternating roles: merge consecutive messages from the same side.
-    const merged = [];
-    for (const m of clean) {
-      const last = merged[merged.length - 1];
-      if (last && last.role === m.role) last.content += '\n' + m.content;
-      else merged.push({ ...m });
-    }
-    if (merged.length === 0 || merged[merged.length - 1].role !== 'user') {
+    // Map messages to Gemini API format ('assistant' -> 'model')
+    const contents = clean.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
       return res.status(400).json({ code: 'INVALID_INPUT', message: 'The last message must be from the user' });
     }
 
@@ -84,19 +84,20 @@ const chat = async (req, res, next) => {
     const timer = setTimeout(() => controller.abort(), 25000);
     let response;
     try {
-      response = await fetch(API_URL, {
+      response = await fetch(`${GEMINI_API_URL}?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
         signal: controller.signal,
         headers: {
           'content-type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: MODEL(),
-          max_tokens: 600,
-          system: buildSystemPrompt(profile, language),
-          messages: merged,
+          system_instruction: {
+            parts: [{ text: buildSystemPrompt(profile, language) }],
+          },
+          contents: contents,
+          generationConfig: {
+            maxOutputTokens: 600,
+          },
         }),
       });
     } finally {
@@ -105,16 +106,12 @@ const chat = async (req, res, next) => {
 
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
-      console.error('Anthropic API error', response.status, detail.slice(0, 300));
+      console.error('Gemini API error', response.status, detail.slice(0, 300));
       return res.status(502).json({ code: 'AI_UNAVAILABLE', message: 'AI assistant is unavailable right now' });
     }
 
     const data = await response.json();
-    const reply = (data.content || [])
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!reply) {
       return res.status(502).json({ code: 'AI_UNAVAILABLE', message: 'AI assistant returned no answer' });
