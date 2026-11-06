@@ -8,12 +8,16 @@ const userRoutes = require('./routes/userRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const metricRoutes = require('./routes/metricRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
+const labReportRoutes = require('./routes/labReportRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 const app = express();
 
 app.use(cors());
-// 1mb so a resized profile photo (base64) fits in the request body
-app.use(express.json({ limit: '1mb' }));
+// 10mb limit so base64 avatar images or lab reports fit in the request body
+app.use(express.json({ limit: '10mb' }));
 
 // These two work without a database so you can quickly check the deployment.
 app.get('/', (req, res) =>
@@ -45,6 +49,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/metrics', metricRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/reports', labReportRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ code: 'NOT_FOUND', message: 'Route not found' }));
