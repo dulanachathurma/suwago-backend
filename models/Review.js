@@ -7,6 +7,7 @@ const reviewSchema = new mongoose.Schema(
     doctorId: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     reviewText: { type: String, required: true, trim: true },
+    isVerifiedPatient: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

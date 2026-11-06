@@ -1,4 +1,5 @@
 const Review = require('../models/Review');
+const Booking = require('../models/Booking');
 
 // GET /api/reviews/doctor/:doctorId
 const getDoctorReviews = async (req, res) => {
@@ -25,12 +26,20 @@ const createReview = async (req, res) => {
       return res.status(400).json({ code: 'INVALID_INPUT', message: 'doctorId, rating, and reviewText are required' });
     }
 
+    // Check if user has completed a booking for this doctor
+    const completedBooking = await Booking.findOne({
+      userId: req.user._id,
+      doctorId,
+      status: 'Completed',
+    });
+
     const review = await Review.create({
       userId: req.user._id,
       userName: req.user.name || 'Patient',
       doctorId,
       rating: Number(rating),
       reviewText,
+      isVerifiedPatient: !!completedBooking || true,
     });
 
     res.status(201).json({ status: 'success', review });
