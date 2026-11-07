@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Review Schema for Doctor Ratings & Verified Patient Reviews
 const reviewSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
