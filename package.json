@@ -1,7 +1,7 @@
 {
-  "name": "vitacare-backend",
+  "name": "suwago-backend",
   "version": "1.0.0",
-  "description": "REST API for VitaCare Mobile (Express + MongoDB + JWT)",
+  "description": "REST API for SuwaGo Mobile (Express + MongoDB + JWT)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

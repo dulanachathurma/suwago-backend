@@ -21,9 +21,9 @@ app.use(express.json({ limit: '10mb' }));
 
 // These two work without a database so you can quickly check the deployment.
 app.get('/', (req, res) =>
-  res.json({ status: 'success', message: 'VitaCare Node.js Express Backend is Live on Vercel!' })
+  res.json({ status: 'success', message: 'SuwaGo Node.js Express Backend is Live on Vercel!' })
 );
-app.get('/api/ping', (req, res) => res.json({ status: 'ok', app: 'VitaCare API' }));
+app.get('/api/ping', (req, res) => res.json({ status: 'ok', app: 'SuwaGo API' }));
 
 // Everything below needs the database and a JWT secret.
 app.use(async (req, res, next) => {
@@ -69,7 +69,7 @@ app.use((err, req, res, next) => {
 // Vercel imports the app; only listen when running locally (npm run dev).
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log('VitaCare API running on http://localhost:' + PORT));
+  app.listen(PORT, () => console.log('SuwaGo API running on http://localhost:' + PORT));
 }
 
 module.exports = app;

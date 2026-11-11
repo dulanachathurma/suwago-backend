@@ -24,10 +24,10 @@ const updateProfile = async (req, res, next) => {
     const weightKg = toNumber(req.body.weightKg);
 
     // Accept either a normal image link or an uploaded photo sent as a base64 data URL.
-    const AVATAR_PATTERN = /^(https?:\/\/|data:image\/(png|jpeg|webp);base64,)/i;
+    const AVATAR_PATTERN = /^(https?:\/\/|data:image\/[a-z0-9.+]+;base64,)/i;
     const badName = name !== undefined && !String(name).trim();
     const badAvatar =
-      avatarUrl && (!AVATAR_PATTERN.test(String(avatarUrl).trim()) || String(avatarUrl).length > 500000);
+      avatarUrl && (!AVATAR_PATTERN.test(String(avatarUrl).trim()) || String(avatarUrl).length > 5000000);
 
     if (badName || badAvatar || isInvalid(age, 1, 120) || isInvalid(heightCm, 50, 250) || isInvalid(weightKg, 10, 400)) {
       return res.status(400).json({ code: 'INVALID_INPUT', message: 'One or more values are invalid' });
